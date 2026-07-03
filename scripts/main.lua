@@ -27,7 +27,7 @@ local function Setup(plr)
 		label.Size = UDim2.fromScale(1, 1)
 		label.BackgroundTransparency = 1
 		label.Font = Enum.Font.GothamBold
-		label.TextSize = 10
+		label.TextSize = 20
 		label.TextScaled = false
 		label.TextColor3 = Color3.fromRGB(255, 255, 255)
 		label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
