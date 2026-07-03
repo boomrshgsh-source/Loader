@@ -1,46 +1,52 @@
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
 
-local function CreateNameESP(player)
-    if player == Players.LocalPlayer then
-        return
-    end
+local function Setup(plr)
+	if plr == LocalPlayer then return end
 
-    local function Setup(character)
-        local head = character:WaitForChild("Head", 5)
-        if not head then return end
+	local function CharacterAdded(char)
+		local hrp = char:WaitForChild("HumanoidRootPart", 5)
+		if not hrp then return end
 
-        if head:FindFirstChild("NameESP") then
-            head.NameESP:Destroy()
-        end
+		if hrp:FindFirstChild("DistanceESP") then
+			hrp.DistanceESP:Destroy()
+		end
 
-        local gui = Instance.new("BillboardGui")
-        gui.Name = "NameESP"
-        gui.Adornee = head
-        gui.Size = UDim2.new(0, 80, 0, 18)
-        gui.StudsOffset = Vector3.new(0, 2, 0)
-        gui.AlwaysOnTop = true
-        gui.Parent = head
+		local gui = Instance.new("BillboardGui")
+		gui.Name = "DistanceESP"
+		gui.Adornee = hrp
+		gui.AlwaysOnTop = true
+		gui.Size = UDim2.new(0, 60, 0, 18)
+		gui.StudsOffset = Vector3.new(0, -3.5, 0) -- ใต้เท้า
+		gui.Parent = hrp
 
-        local text = Instance.new("TextLabel")
-        text.Size = UDim2.fromScale(1, 1)
-        text.BackgroundTransparency = 1
-        text.Text = player.Name
-        text.TextScaled = true
-        text.Font = Enum.Font.GothamBold
-        text.TextColor3 = Color3.new(1, 1, 1)
-        text.TextStrokeTransparency = 0
-        text.Parent = gui
-    end
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.fromScale(1, 1)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = Color3.new(1, 1, 1)
+		label.TextStrokeTransparency = 0
+		label.Font = Enum.Font.GothamBold
+		label.TextScaled = true
+		label.Parent = gui
 
-    if player.Character then
-        Setup(player.Character)
-    end
+		RunService.RenderStepped:Connect(function()
+			if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and hrp.Parent then
+				local dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
+				label.Text = "[" .. dist .. "]"
+			end
+		end)
+	end
 
-    player.CharacterAdded:Connect(Setup)
+	if plr.Character then
+		CharacterAdded(plr.Character)
+	end
+
+	plr.CharacterAdded:Connect(CharacterAdded)
 end
 
-for _, player in ipairs(Players:GetPlayers()) do
-    CreateNameESP(player)
+for _, plr in ipairs(Players:GetPlayers()) do
+	Setup(plr)
 end
 
-Players.PlayerAdded:Connect(CreateNameESP)
+Players.PlayerAdded:Connect(Setup)
