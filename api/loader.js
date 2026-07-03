@@ -1,21 +1,13 @@
-import fs from "fs";
-import path from "path";
-
 export default function handler(req, res) {
-    const { script } = req.query;
+    const info = {
+        ip: req.headers["x-forwarded-for"] || "Unknown",
+        userAgent: req.headers["user-agent"] || "None",
+        referer: req.headers["referer"] || "None",
+        host: req.headers["host"] || "None",
+        method: req.method,
+        headers: req.headers
+    };
 
-    if (!script) {
-        return res.status(400).send("Missing script");
-    }
-
-    const file = path.join(process.cwd(), "scripts", `${script}.lua`);
-
-    if (!fs.existsSync(file)) {
-        return res.status(404).send("Script not found");
-    }
-
-    const code = fs.readFileSync(file, "utf8");
-
-    res.setHeader("Content-Type", "text/plain");
-    res.status(200).send(code);
+    res.setHeader("Content-Type", "application/json");
+    res.status(200).send(JSON.stringify(info, null, 2));
 }
