@@ -1,13 +1,24 @@
-export default function handler(req, res) {
-    const info = {
-        ip: req.headers["x-forwarded-for"] || "Unknown",
-        userAgent: req.headers["user-agent"] || "None",
-        referer: req.headers["referer"] || "None",
-        host: req.headers["host"] || "None",
-        method: req.method,
-        headers: req.headers
-    };
+import fs from "fs";
+import path from "path";
 
-    res.setHeader("Content-Type", "application/json");
-    res.status(200).send(JSON.stringify(info, null, 2));
+export default function handler(req, res) {
+    const ua = req.headers["user-agent"] || "";
+    if (!/ROBLOX|RobloxApp/i.test(ua)) {
+        return res.redirect(302, "https://mybioboom.vercel.app");
+    }
+
+    const { script } = req.query;
+
+    if (!script) {
+        return res.status(400).send("Missing script");
+    }
+
+    const file = path.join(process.cwd(), "scripts", `${script}.lua`);
+
+    if (!fs.existsSync(file)) {
+        return res.status(404).send("Script not found");
+    }
+
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.send(fs.readFileSync(file, "utf8"));
 }
