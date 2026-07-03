@@ -10,33 +10,42 @@ local function Setup(plr)
 		local hrp = char:WaitForChild("HumanoidRootPart", 5)
 		if not hrp then return end
 
-		if hrp:FindFirstChild("DistanceESP") then
-			hrp.DistanceESP:Destroy()
+		local old = hrp:FindFirstChild("DistanceESP")
+		if old then
+			old:Destroy()
 		end
 
 		local gui = Instance.new("BillboardGui")
 		gui.Name = "DistanceESP"
 		gui.Adornee = hrp
 		gui.AlwaysOnTop = true
-		gui.Size = UDim2.new(0, 28, 0, 8)
-		gui.StudsOffset = Vector3.new(0, -3.5, 0)
+		gui.Size = UDim2.new(0, 50, 0, 14)
+		gui.StudsOffset = Vector3.new(0, -3.3, 0)
 		gui.Parent = hrp
 
 		local label = Instance.new("TextLabel")
 		label.Size = UDim2.fromScale(1, 1)
 		label.BackgroundTransparency = 1
-		label.TextColor3 = Color3.fromRGB(255, 255, 255)
-		label.TextStrokeTransparency = 0
-		label.Font = Enum.Font.Code
+		label.Font = Enum.Font.GothamBold
+		label.TextSize = 10
 		label.TextScaled = false
-		label.TextSize = 6
+		label.TextColor3 = Color3.fromRGB(255, 255, 255)
+		label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		label.TextStrokeTransparency = 0
 		label.Parent = gui
 
-		RunService.RenderStepped:Connect(function()
+		local connection
+		connection = RunService.RenderStepped:Connect(function()
+			if not hrp.Parent then
+				connection:Disconnect()
+				return
+			end
+
 			local myChar = LocalPlayer.Character
-			if myChar and myChar:FindFirstChild("HumanoidRootPart") and hrp.Parent then
-				local dist = math.floor((myChar.HumanoidRootPart.Position - hrp.Position).Magnitude)
-				label.Text = "[" .. dist .. "]"
+			local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+			if myHRP then
+				local distance = math.floor((myHRP.Position - hrp.Position).Magnitude)
+				label.Text = "[" .. distance .. "]"
 			end
 		end)
 	end
