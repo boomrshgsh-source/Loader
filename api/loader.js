@@ -4,7 +4,7 @@ import path from "path";
 export default function handler(req, res) {
     const ua = req.headers["user-agent"] || "";
     if (!/ROBLOX|RobloxApp/i.test(ua)) {
-        return res.redirect(302, "https://mybioboom.vercel.app");
+        return res.redirect(302, "https://fusions.info/boom_b");
     }
 
     const { script } = req.query;
