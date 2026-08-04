@@ -17,4 +17,9 @@ local function findCoin()
     end
   end
 end
-whlie task.wait().
+whlie task.wait(0.1) do
+  local co = findCoin
+if co then 
+    R.CFrame = co.CFrame
+  end
+end
