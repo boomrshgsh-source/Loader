@@ -1,4 +1,5 @@
-local Player = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
 
 local Character = Player.Character or Player.CharacterAdded:Wait()
 local HRP = Character:WaitForChild("HumanoidRootPart")
@@ -10,9 +11,12 @@ local function findCoin()
 		return nil
 	end
 
-	local coinFolder = workspace.Factory.CoinContainer
+	local coinContainer = workspace:FindFirstChild("CoinContainer", true)
+	if not coinContainer then
+		return nil
+	end
 
-	for _, v in ipairs(coinFolder:GetChildren()) do
+	for _, v in ipairs(coinContainer:GetChildren()) do
 		if v:IsA("Part") and v.Name == "Coin_Server" then
 			return v
 		end
@@ -22,9 +26,9 @@ local function findCoin()
 end
 
 while task.wait(0.1) do
-	local co = findCoin()
+	local coin = findCoin()
 
-	if co then
-		HRP.CFrame = co.CFrame
+	if coin then
+		HRP.CFrame = coin.CFrame
 	end
 end
