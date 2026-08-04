@@ -1,0 +1,914 @@
+--[[
+    SINGULARITY HUB v13 - RAYFIELD UI EDITION
+    Premium Rayfield-Style Interface + Loading Screen
+    16 Functions | PC & Mobile | Delta Compatible
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local StarterGui = game:GetService("StarterGui")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
+
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+-- Clean up
+pcall(function()
+    if _G.SingularityV13 then _G.SingularityV13:Destroy() end
+    if _G.LoadingScreenV13 then _G.LoadingScreenV13:Destroy() end
+    if _G.MobileV13 then _G.MobileV13:Destroy() end
+end)
+
+-- ==================== STATE ====================
+local State = {
+    Fly = false, Noclip = false, ESP = false, Invis = false, God = false,
+    SpeedHack = false, JumpPower = false, InfiniteJump = false, AntiAFK = false,
+    ClickTP = false, Aimbot = false,
+    FlySpeed = 50, WalkSpeed = 16, JumpHeight = 50,
+    AimbotTarget = nil, AimbotSmoothness = 5, AimbotFOV = 200,
+    FlyGyro = nil, FlyVel = nil, FlyConn = nil, FlyBodyPos = nil,
+    NoclipConn = nil, GodConn = nil, SpeedConn = nil, JumpConn = nil,
+    AntiAFKConn = nil, ClickTPConn = nil, AimbotConn = nil,
+    JoyDir = Vector3.zero, VertIn = 0,
+    ESPFolder = nil, ESPColor = 1,
+    Mobile = nil, SelectedTarget = nil,
+    MenuOpen = true, CurrentTab = "Combat"
+}
+
+local ESPColors = {
+    {Color3.fromRGB(255, 50, 50), "CRIMSON"},
+    {Color3.fromRGB(255, 120, 30), "EMBER"},
+    {Color3.fromRGB(255, 220, 30), "SOLAR"},
+    {Color3.fromRGB(50, 255, 100), "EMERALD"},
+    {Color3.fromRGB(30, 200, 255), "OCEAN"},
+    {Color3.fromRGB(60, 100, 255), "SAPPHIRE"},
+    {Color3.fromRGB(160, 50, 255), "AMETHYST"},
+    {Color3.fromRGB(255, 50, 220), "ROSE"}
+}
+
+local function GetThemeColor()
+    local t = tick() % 8
+    if t < 2 then return Color3.fromRGB(100, 100, 255)
+    elseif t < 4 then t = t - 2; return Color3.fromRGB(100, 200, 255)
+    elseif t < 6 then t = t - 4; return Color3.fromRGB(200, 100, 255)
+    else t = t - 6; return Color3.fromRGB(255, 100, 200) end
+end
+
+-- Rayfield Colors
+local RF = {
+    Background = Color3.fromRGB(18, 18, 24),
+    Section = Color3.fromRGB(24, 24, 32),
+    Accent = Color3.fromRGB(100, 100, 255),
+    Text = Color3.fromRGB(255, 255, 255),
+    SubText = Color3.fromRGB(160, 160, 175),
+    ToggleOn = Color3.fromRGB(100, 100, 255),
+    ToggleOff = Color3.fromRGB(60, 60, 70),
+    Slider = Color3.fromRGB(100, 100, 255),
+    Red = Color3.fromRGB(255, 60, 60)
+}
+
+State.ESPFolder = Instance.new("Folder")
+State.ESPFolder.Name = "ESPFolder"
+State.ESPFolder.Parent = CoreGui
+
+-- ==================== LOADING SCREEN ====================
+local LoadingScreen = Instance.new("ScreenGui")
+LoadingScreen.Name = "LoadingScreenV13"
+LoadingScreen.Parent = CoreGui
+LoadingScreen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+_G.LoadingScreenV13 = LoadingScreen
+
+local LoadingBg = Instance.new("Frame")
+LoadingBg.Size = UDim2.new(1, 0, 1, 0)
+LoadingBg.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
+LoadingBg.BorderSizePixel = 0
+LoadingBg.Parent = LoadingScreen
+
+local LoadingLogo = Instance.new("Frame")
+LoadingLogo.Size = UDim2.new(0, 80, 0, 80)
+LoadingLogo.Position = UDim2.new(0.5, -40, 0.38, -40)
+LoadingLogo.BackgroundColor3 = RF.Accent
+LoadingLogo.BorderSizePixel = 0
+LoadingLogo.Parent = LoadingBg
+Instance.new("UICorner", LoadingLogo).CornerRadius = UDim.new(0, 16)
+
+local LoadingLogoText = Instance.new("TextLabel")
+LoadingLogoText.Size = UDim2.new(1, 0, 1, 0)
+LoadingLogoText.BackgroundTransparency = 1
+LoadingLogoText.Text = "SH"
+LoadingLogoText.TextColor3 = Color3.fromRGB(255, 255, 255)
+LoadingLogoText.TextSize = 32
+LoadingLogoText.Font = Enum.Font.GothamBlack
+LoadingLogoText.Parent = LoadingLogo
+
+local LoadingTitle = Instance.new("TextLabel")
+LoadingTitle.Size = UDim2.new(0, 300, 0, 30)
+LoadingTitle.Position = UDim2.new(0.5, -150, 0.52, 0)
+LoadingTitle.BackgroundTransparency = 1
+LoadingTitle.Text = "SINGULARITY HUB"
+LoadingTitle.TextColor3 = RF.Text
+LoadingTitle.TextSize = 22
+LoadingTitle.Font = Enum.Font.GothamBlack
+LoadingTitle.Parent = LoadingBg
+
+local LoadingSub = Instance.new("TextLabel")
+LoadingSub.Size = UDim2.new(0, 300, 0, 20)
+LoadingSub.Position = UDim2.new(0.5, -150, 0.57, 0)
+LoadingSub.BackgroundTransparency = 1
+LoadingSub.Text = "RAYFIELD EDITION v13"
+LoadingSub.TextColor3 = RF.SubText
+LoadingSub.TextSize = 12
+LoadingSub.Font = Enum.Font.GothamBold
+LoadingSub.Parent = LoadingBg
+
+local LoadingBarBg = Instance.new("Frame")
+LoadingBarBg.Size = UDim2.new(0, 260, 0, 4)
+LoadingBarBg.Position = UDim2.new(0.5, -130, 0.63, 0)
+LoadingBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+LoadingBarBg.BorderSizePixel = 0
+LoadingBarBg.Parent = LoadingBg
+Instance.new("UICorner", LoadingBarBg).CornerRadius = UDim.new(0, 2)
+
+local LoadingBarFill = Instance.new("Frame")
+LoadingBarFill.Size = UDim2.new(0, 0, 1, 0)
+LoadingBarFill.BackgroundColor3 = RF.Accent
+LoadingBarFill.BorderSizePixel = 0
+LoadingBarFill.Parent = LoadingBarBg
+Instance.new("UICorner", LoadingBarFill).CornerRadius = UDim.new(0, 2)
+
+local LoadingPercent = Instance.new("TextLabel")
+LoadingPercent.Size = UDim2.new(0, 60, 0, 18)
+LoadingPercent.Position = UDim2.new(0.5, -30, 0.65, 0)
+LoadingPercent.BackgroundTransparency = 1
+LoadingPercent.Text = "0%"
+LoadingPercent.TextColor3 = RF.SubText
+LoadingPercent.TextSize = 11
+LoadingPercent.Font = Enum.Font.GothamBold
+LoadingPercent.Parent = LoadingBg
+
+-- Loading dots
+local Dots = Instance.new("TextLabel")
+Dots.Size = UDim2.new(0, 100, 0, 20)
+Dots.Position = UDim2.new(0.5, -50, 0.7, 0)
+Dots.BackgroundTransparency = 1
+Dots.Text = "LOADING"
+Dots.TextColor3 = RF.SubText
+Dots.TextSize = 10
+Dots.Font = Enum.Font.Gotham
+Dots.Parent = LoadingBg
+
+task.spawn(function()
+    local dotAnim = {"LOADING", "LOADING.", "LOADING..", "LOADING..."}
+    local di = 1
+    for i = 0, 100 do
+        LoadingBarFill.Size = UDim2.new(i/100, 0, 1, 0)
+        LoadingPercent.Text = i .. "%"
+        di = math.floor(i/25) + 1
+        if di > 4 then di = 4 end
+        Dots.Text = dotAnim[di]
+        task.wait(0.015)
+    end
+    
+    task.wait(0.2)
+    TweenService:Create(LoadingBg, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+    for _, v in ipairs(LoadingBg:GetChildren()) do
+        if v:IsA("TextLabel") then TweenService:Create(v, TweenInfo.new(0.4), {TextTransparency = 1}):Play() end
+        if v:IsA("Frame") and v ~= LoadingBg then TweenService:Create(v, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play() end
+    end
+    task.wait(0.5)
+    LoadingScreen:Destroy()
+    
+    StarterGui:SetCore("SendNotification", {
+        Title = "Singularity Hub",
+        Text = "Rayfield Edition Loaded | " .. (isMobile and "MOBILE" or "PC"),
+        Duration = 4
+    })
+end)
+
+-- ==================== MAIN GUI - RAYFIELD STYLE ====================
+local MainGUI = Instance.new("ScreenGui")
+MainGUI.Name = "SingularityV13"
+MainGUI.Parent = CoreGui
+MainGUI.ResetOnSpawn = false
+MainGUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+_G.SingularityV13 = MainGUI
+
+-- Toggle Button
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0, 48, 0, 48)
+ToggleBtn.Position = UDim2.new(0, 12, 0.44, 0)
+ToggleBtn.BackgroundColor3 = RF.Background
+ToggleBtn.BorderSizePixel = 0
+ToggleBtn.Text = "SH"
+ToggleBtn.TextColor3 = RF.Accent
+ToggleBtn.TextSize = 16
+ToggleBtn.Font = Enum.Font.GothamBlack
+ToggleBtn.AutoButtonColor = false
+ToggleBtn.Parent = MainGUI
+ToggleBtn.ZIndex = 99999
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", ToggleBtn).Color = RF.Accent
+Instance.new("UIStroke", ToggleBtn).Thickness = 1.5
+
+-- Main Window
+local Window = Instance.new("Frame")
+Window.Size = UDim2.new(0, 550, 0, 420)
+Window.Position = UDim2.new(0, 75, 0.5, -210)
+Window.BackgroundColor3 = RF.Background
+Window.BorderSizePixel = 0
+Window.Visible = true
+Window.Active = true
+Window.Draggable = true
+Window.ClipsDescendants = true
+Window.Parent = MainGUI
+Window.ZIndex = 99998
+Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 8)
+Instance.new("UIStroke", Window).Color = Color3.fromRGB(40, 40, 50)
+Instance.new("UIStroke", Window).Thickness = 1
+
+-- Title Bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 36)
+TitleBar.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = Window
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+TitleLabel.Position = UDim2.new(0, 14, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "SINGULARITY HUB"
+TitleLabel.TextColor3 = RF.Text
+TitleLabel.TextSize = 13
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TitleBar
+
+-- Sidebar
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 130, 1, -36)
+Sidebar.Position = UDim2.new(0, 0, 0, 36)
+Sidebar.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = Window
+
+local SidebarLine = Instance.new("Frame")
+SidebarLine.Size = UDim2.new(0, 1, 1, 0)
+SidebarLine.Position = UDim2.new(1, 0, 0, 0)
+SidebarLine.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+SidebarLine.BorderSizePixel = 0
+SidebarLine.Parent = Sidebar
+
+-- Content Area
+local ContentArea = Instance.new("Frame")
+ContentArea.Size = UDim2.new(1, -130, 1, -36)
+ContentArea.Position = UDim2.new(0, 130, 0, 36)
+ContentArea.BackgroundColor3 = RF.Background
+ContentArea.BorderSizePixel = 0
+ContentArea.Parent = Window
+
+-- ==================== SIDEBAR BUTTONS ====================
+local SidebarButtons = {}
+local ContentPages = {}
+
+local function CreateSidebarButton(name, icon, order)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -12, 0, 32)
+    btn.Position = UDim2.new(0, 6, 0, 6 + (order-1) * 38)
+    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+    btn.BorderSizePixel = 0
+    btn.Text = "  " .. icon .. "  " .. name
+    btn.TextColor3 = RF.SubText
+    btn.TextSize = 12
+    btn.Font = Enum.Font.GothamBold
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.AutoButtonColor = false
+    btn.Parent = Sidebar
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    local page = Instance.new("ScrollingFrame")
+    page.Size = UDim2.new(1, -20, 1, -20)
+    page.Position = UDim2.new(0, 10, 0, 10)
+    page.BackgroundTransparency = 1
+    page.BorderSizePixel = 0
+    page.ScrollBarThickness = 2
+    page.ScrollBarImageColor3 = RF.Accent
+    page.Visible = (order == 1)
+    page.CanvasSize = UDim2.new(0, 0, 0, 500)
+    page.Parent = ContentArea
+    ContentPages[name] = page
+    
+    local pageLayout = Instance.new("UIListLayout", page)
+    pageLayout.Padding = UDim.new(0, 8)
+    pageLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    btn.MouseButton1Click:Connect(function()
+        for _, b in pairs(SidebarButtons) do
+            b.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+            b.TextColor3 = RF.SubText
+        end
+        btn.BackgroundColor3 = RF.Accent
+        btn.BackgroundTransparency = 0.2
+        btn.TextColor3 = RF.Text
+        for _, p in pairs(ContentPages) do p.Visible = false end
+        page.Visible = true
+        State.CurrentTab = name
+    end)
+    
+    SidebarButtons[name] = btn
+    return page, btn
+end
+
+-- Initialize first button as active
+local combatPage, combatBtn = CreateSidebarButton("Combat", "◎", 1)
+combatBtn.BackgroundColor3 = RF.Accent
+combatBtn.BackgroundTransparency = 0.2
+combatBtn.TextColor3 = RF.Text
+
+local movementPage = CreateSidebarButton("Movement", "⚡", 2)
+local visualPage = CreateSidebarButton("Visuals", "◎", 3)
+local teleportPage = CreateSidebarButton("Teleport", "◉", 4)
+local miscPage = CreateSidebarButton("Misc", "◆", 5)
+local settingsPage = CreateSidebarButton("Settings", "⬢", 6)
+
+-- ==================== SECTION CREATOR ====================
+local function CreateSection(parent, title)
+    local section = Instance.new("Frame")
+    section.Size = UDim2.new(1, 0, 0, 40)
+    section.BackgroundColor3 = RF.Section
+    section.BorderSizePixel = 0
+    section.Parent = parent
+    Instance.new("UICorner", section).CornerRadius = UDim.new(0, 6)
+    
+    local header = Instance.new("TextLabel", section)
+    header.Size = UDim2.new(1, -16, 1, 0)
+    header.Position = UDim2.new(0, 12, 0, 0)
+    header.BackgroundTransparency = 1
+    header.Text = title
+    header.TextColor3 = RF.SubText
+    header.TextSize = 11
+    header.Font = Enum.Font.GothamBold
+    header.TextXAlignment = Enum.TextXAlignment.Left
+    
+    return section
+end
+
+local function CreateToggle(parent, text, getState, setState)
+    local toggle = Instance.new("Frame")
+    toggle.Size = UDim2.new(1, 0, 0, 36)
+    toggle.BackgroundColor3 = RF.Section
+    toggle.BorderSizePixel = 0
+    toggle.Parent = parent
+    Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 6)
+    
+    local label = Instance.new("TextLabel", toggle)
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = RF.Text
+    label.TextSize = 12
+    label.Font = Enum.Font.GothamMedium
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local switchBg = Instance.new("Frame", toggle)
+    switchBg.Size = UDim2.new(0, 44, 0, 22)
+    switchBg.Position = UDim2.new(1, -56, 0.5, -11)
+    switchBg.BorderSizePixel = 0
+    Instance.new("UICorner", switchBg).CornerRadius = UDim.new(0, 11)
+    
+    local switchKnob = Instance.new("Frame", switchBg)
+    switchKnob.Size = UDim2.new(0, 18, 0, 18)
+    switchKnob.Position = UDim2.new(0, 2, 0.5, -9)
+    switchKnob.BackgroundColor3 = RF.Text
+    switchKnob.BorderSizePixel = 0
+    Instance.new("UICorner", switchKnob).CornerRadius = UDim.new(1, 0)
+    
+    local switchBtn = Instance.new("TextButton", toggle)
+    switchBtn.Size = UDim2.new(0, 44, 0, 22)
+    switchBtn.Position = UDim2.new(1, -56, 0.5, -11)
+    switchBtn.BackgroundTransparency = 1
+    switchBtn.Text = ""
+    switchBtn.BorderSizePixel = 0
+    switchBtn.ZIndex = 5
+    
+    local function update()
+        local state = getState()
+        switchBg.BackgroundColor3 = state and RF.ToggleOn or RF.ToggleOff
+        switchKnob.Position = state and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+    end
+    
+    switchBtn.MouseButton1Click:Connect(function()
+        setState(not getState())
+        update()
+    end)
+    
+    task.spawn(function()
+        while task.wait(0.2) do update() end
+    end)
+    
+    return toggle
+end
+
+local function CreateSlider(parent, text, min, max, getValue, setValue)
+    local slider = Instance.new("Frame")
+    slider.Size = UDim2.new(1, 0, 0, 60)
+    slider.BackgroundColor3 = RF.Section
+    slider.BorderSizePixel = 0
+    slider.Parent = parent
+    Instance.new("UICorner", slider).CornerRadius = UDim.new(0, 6)
+    
+    local label = Instance.new("TextLabel", slider)
+    label.Size = UDim2.new(0.5, 0, 0, 20)
+    label.Position = UDim2.new(0, 12, 0, 6)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = RF.Text
+    label.TextSize = 12
+    label.Font = Enum.Font.GothamMedium
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local valLabel = Instance.new("TextLabel", slider)
+    valLabel.Size = UDim2.new(0, 50, 0, 20)
+    valLabel.Position = UDim2.new(1, -62, 0, 6)
+    valLabel.BackgroundTransparency = 1
+    valLabel.Text = tostring(getValue())
+    valLabel.TextColor3 = RF.Accent
+    valLabel.TextSize = 12
+    valLabel.Font = Enum.Font.GothamBold
+    valLabel.TextXAlignment = Enum.TextXAlignment.Right
+    
+    local bg = Instance.new("Frame", slider)
+    bg.Size = UDim2.new(1, -24, 0, 6)
+    bg.Position = UDim2.new(0, 12, 0, 34)
+    bg.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+    bg.BorderSizePixel = 0
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 3)
+    
+    local fill = Instance.new("Frame", bg)
+    fill.Size = UDim2.new((getValue() - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = RF.Slider
+    fill.BorderSizePixel = 0
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
+    
+    local knob = Instance.new("Frame", bg)
+    knob.Size = UDim2.new(0, 16, 0, 16)
+    knob.Position = UDim2.new((getValue() - min) / (max - min), -8, 0, -5)
+    knob.BackgroundColor3 = RF.Text
+    knob.BorderSizePixel = 0
+    knob.ZIndex = 10
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+    
+    local dragging = false
+    local function update(x)
+        local r = math.clamp((x - bg.AbsolutePosition.X) / bg.AbsoluteSize.X, 0, 1)
+        fill.Size = UDim2.new(r, 0, 1, 0)
+        knob.Position = UDim2.new(r, -8, 0, -5)
+        local v = math.floor(r * (max - min) + min)
+        setValue(v)
+        valLabel.Text = tostring(v)
+    end
+    
+    bg.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; update(i.Position.X)
+        end
+    end)
+    knob.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            update(i.Position.X)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function() dragging = false end)
+end
+
+local function CreateButton(parent, text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 36)
+    btn.BackgroundColor3 = RF.Section
+    btn.BorderSizePixel = 0
+    btn.Text = text
+    btn.TextColor3 = RF.Text
+    btn.TextSize = 12
+    btn.Font = Enum.Font.GothamMedium
+    btn.AutoButtonColor = false
+    btn.Parent = parent
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+local function CreateLabel(parent, text)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 28)
+    lbl.BackgroundColor3 = RF.Section
+    lbl.BorderSizePixel = 0
+    lbl.Text = text
+    lbl.TextColor3 = RF.SubText
+    lbl.TextSize = 11
+    lbl.Font = Enum.Font.Gotham
+    lbl.Parent = parent
+    Instance.new("UICorner", lbl).CornerRadius = UDim.new(0, 6)
+    return lbl
+end
+
+-- ==================== COMBAT PAGE ====================
+CreateSection(combatPage, "COMBAT SYSTEMS")
+CreateToggle(combatPage, "Aimbot", function() return State.Aimbot end, function(v)
+    State.Aimbot = v
+    if v then StartAimbot() else StopAimbot() end
+end)
+
+CreateSlider(combatPage, "Smoothness", 1, 20, function() return State.AimbotSmoothness end, function(v) State.AimbotSmoothness = v end)
+CreateSlider(combatPage, "FOV", 50, 500, function() return State.AimbotFOV end, function(v) State.AimbotFOV = v end)
+
+CreateSection(combatPage, "TARGET SELECTOR")
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= LocalPlayer then
+        CreateButton(combatPage, "◎  " .. plr.Name, function()
+            State.SelectedTarget = plr
+            State.AimbotTarget = plr
+        end)
+    end
+end
+
+-- ==================== MOVEMENT PAGE ====================
+CreateSection(movementPage, "FLIGHT SYSTEM")
+CreateToggle(movementPage, "Flight", function() return State.Fly end, function(v)
+    State.Fly = v
+    if v then StartFly(); if isMobile then CreateMobileFly() end
+    else StopFly(); if isMobile then RemoveMobileFly() end end
+end)
+CreateSlider(movementPage, "Fly Speed", 10, 200, function() return State.FlySpeed end, function(v) State.FlySpeed = v end)
+
+CreateSection(movementPage, "SPEED & JUMP")
+CreateToggle(movementPage, "Speed Hack", function() return State.SpeedHack end, function(v)
+    State.SpeedHack = v
+    if v then StartSpeedHack() else StopSpeedHack() end
+end)
+CreateSlider(movementPage, "Walk Speed", 16, 200, function() return State.WalkSpeed end, function(v) State.WalkSpeed = v end)
+
+CreateToggle(movementPage, "Jump Boost", function() return State.JumpPower end, function(v)
+    State.JumpPower = v
+    if v then ApplyJumpPower() else ResetJumpPower() end
+end)
+CreateSlider(movementPage, "Jump Height", 50, 500, function() return State.JumpHeight end, function(v) State.JumpHeight = v; if State.JumpPower then ApplyJumpPower() end end)
+
+CreateToggle(movementPage, "Infinite Jump", function() return State.InfiniteJump end, function(v)
+    State.InfiniteJump = v
+    if v then StartInfiniteJump() else StopInfiniteJump() end
+end)
+
+-- ==================== VISUALS PAGE ====================
+CreateSection(visualPage, "ESP SYSTEM")
+CreateToggle(visualPage, "ESP", function() return State.ESP end, function(v)
+    State.ESP = v
+    UpdateESP()
+end)
+
+local colorFrame = Instance.new("Frame")
+colorFrame.Size = UDim2.new(1, 0, 0, 70)
+colorFrame.BackgroundColor3 = RF.Section
+colorFrame.BorderSizePixel = 0
+colorFrame.Parent = visualPage
+Instance.new("UICorner", colorFrame).CornerRadius = UDim.new(0, 6)
+
+for i, col in ipairs(ESPColors) do
+    local cBtn = Instance.new("TextButton")
+    cBtn.Size = UDim2.new(0, 42, 0, 24)
+    cBtn.Position = UDim2.new(0, 10 + ((i-1) % 4) * 50, 0, 22 + math.floor((i-1) / 4) * 28)
+    cBtn.BackgroundColor3 = col[1]
+    cBtn.BorderSizePixel = 0
+    cBtn.Text = ""
+    cBtn.AutoButtonColor = false
+    cBtn.Parent = colorFrame
+    Instance.new("UICorner", cBtn).CornerRadius = UDim.new(0, 4)
+    cBtn.MouseButton1Click:Connect(function()
+        State.ESPColor = i
+        if State.ESP then UpdateESP() end
+    end)
+end
+
+-- ==================== TELEPORT PAGE ====================
+CreateSection(teleportPage, "TELEPORT SYSTEM")
+CreateToggle(teleportPage, "Click Teleport", function() return State.ClickTP end, function(v)
+    State.ClickTP = v
+    if v then StartClickTP() else StopClickTP() end
+end)
+
+CreateSection(teleportPage, "PLAYER TELEPORT")
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= LocalPlayer then
+        CreateButton(teleportPage, "◉  " .. plr.Name, function()
+            if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+                end
+            end
+        end)
+    end
+end
+
+-- ==================== MISC PAGE ====================
+CreateSection(miscPage, "UTILITY")
+CreateToggle(miscPage, "Noclip", function() return State.Noclip end, function(v)
+    State.Noclip = v
+    if v then StartNoclip() else StopNoclip() end
+end)
+CreateToggle(miscPage, "God Mode", function() return State.God end, function(v)
+    State.God = v
+    if v then StartGodMode() else StopGodMode() end
+end)
+CreateToggle(miscPage, "Invisibility", function() return State.Invis end, function(v)
+    State.Invis = v
+    SetInvis(v)
+end)
+CreateToggle(miscPage, "Anti-AFK", function() return State.AntiAFK end, function(v)
+    State.AntiAFK = v
+    if v then StartAntiAFK() else StopAntiAFK() end
+end)
+
+-- ==================== SETTINGS PAGE ====================
+CreateSection(settingsPage, "INFORMATION")
+CreateLabel(settingsPage, "SINGULARITY HUB v13")
+CreateLabel(settingsPage, "Rayfield UI Edition")
+CreateLabel(settingsPage, "Platform: " .. (isMobile and "MOBILE" or "PC"))
+CreateLabel(settingsPage, "16 Functions Loaded")
+CreateLabel(settingsPage, "Press SH to toggle menu")
+
+-- ==================== MENU TOGGLE ====================
+ToggleBtn.MouseButton1Down:Connect(function()
+    State.MenuOpen = not State.MenuOpen
+    if State.MenuOpen then
+        Window.Visible = true
+        TweenService:Create(Window, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0, 75, 0.5, -210)}):Play()
+    else
+        TweenService:Create(Window, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(0, -580, 0.5, -210)}):Play()
+        task.delay(0.3, function() Window.Visible = false end)
+    end
+end)
+
+-- ==================== CORE SYSTEMS ====================
+function StartFly()
+    StopFly()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local root = char:WaitForChild("HumanoidRootPart")
+    local hum = char:WaitForChild("Humanoid")
+    if not root or not hum then return end
+    
+    State.FlyGyro = Instance.new("BodyGyro")
+    State.FlyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    State.FlyGyro.D = 50; State.FlyGyro.P = 3000
+    State.FlyGyro.CFrame = root.CFrame
+    State.FlyGyro.Parent = root
+    
+    State.FlyVel = Instance.new("BodyVelocity")
+    State.FlyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    State.FlyVel.Velocity = Vector3.zero
+    State.FlyVel.P = 5000
+    State.FlyVel.Parent = root
+    
+    State.FlyBodyPos = Instance.new("BodyPosition")
+    State.FlyBodyPos.MaxForce = Vector3.new(0, 9e9, 0)
+    State.FlyBodyPos.P = 50000; State.FlyBodyPos.D = 1000
+    State.FlyBodyPos.Position = root.Position
+    State.FlyBodyPos.Parent = root
+    
+    hum.PlatformStand = true
+    local lastHeight = root.Position.Y
+    
+    State.FlyConn = RunService.Heartbeat:Connect(function()
+        if not State.Fly then StopFly(); return end
+        local c = LocalPlayer.Character
+        if not c then StopFly(); return end
+        local r = c:FindFirstChild("HumanoidRootPart")
+        if not r then StopFly(); return end
+        if not State.FlyGyro or not State.FlyGyro.Parent then StopFly(); return end
+        if not State.FlyVel or not State.FlyVel.Parent then StopFly(); return end
+        if not State.FlyBodyPos or not State.FlyBodyPos.Parent then StopFly(); return end
+        
+        State.FlyGyro.CFrame = Camera.CFrame
+        local dir = Vector3.zero
+        local verticalInput = false
+        
+        if isMobile then
+            if State.JoyDir.Magnitude > 0.1 then
+                dir = (Camera.CFrame.LookVector * -State.JoyDir.Z) + (Camera.CFrame.RightVector * State.JoyDir.X)
+            end
+            if State.VertIn ~= 0 then
+                verticalInput = true
+                lastHeight = r.Position.Y + State.VertIn * State.FlySpeed * 0.05
+            end
+        else
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then verticalInput = true; lastHeight = r.Position.Y + State.FlySpeed * 0.05 end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then verticalInput = true; lastHeight = r.Position.Y - State.FlySpeed * 0.05 end
+        end
+        
+        State.FlyVel.Velocity = dir.Magnitude > 0 and dir.Unit * State.FlySpeed or Vector3.zero
+        if verticalInput or dir.Magnitude < 0.1 then
+            State.FlyBodyPos.Position = Vector3.new(r.Position.X, lastHeight, r.Position.Z)
+            if dir.Magnitude < 0.1 then State.FlyVel.Velocity = Vector3.zero end
+        else
+            State.FlyBodyPos.Position = Vector3.new(r.Position.X, r.Position.Y, r.Position.Z)
+            lastHeight = r.Position.Y
+        end
+    end)
+end
+
+function StopFly()
+    if State.FlyConn then State.FlyConn:Disconnect(); State.FlyConn = nil end
+    if State.FlyGyro then State.FlyGyro:Destroy(); State.FlyGyro = nil end
+    if State.FlyVel then State.FlyVel:Destroy(); State.FlyVel = nil end
+    if State.FlyBodyPos then State.FlyBodyPos:Destroy(); State.FlyBodyPos = nil end
+    pcall(function() local c = LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid.PlatformStand = false end end)
+end
+
+function StartNoclip()
+    StopNoclip()
+    State.NoclipConn = RunService.Heartbeat:Connect(function()
+        if not State.Noclip then StopNoclip(); return end
+        local c = LocalPlayer.Character
+        if c then for _, p in ipairs(c:GetDescendants()) do if p:IsA("BasePart") and p.CanCollide then p.CanCollide = false end end end
+    end)
+end
+function StopNoclip() if State.NoclipConn then State.NoclipConn:Disconnect(); State.NoclipConn = nil end end
+
+function StartGodMode()
+    StopGodMode()
+    State.GodConn = RunService.Heartbeat:Connect(function()
+        if not State.God then StopGodMode(); return end
+        local c = LocalPlayer.Character; if c then local h = c:FindFirstChild("Humanoid"); if h then h.Health = h.MaxHealth end end
+    end)
+end
+function StopGodMode() if State.GodConn then State.GodConn:Disconnect(); State.GodConn = nil end end
+
+function StartSpeedHack()
+    StopSpeedHack()
+    State.SpeedConn = RunService.Heartbeat:Connect(function()
+        if not State.SpeedHack then StopSpeedHack(); return end
+        local c = LocalPlayer.Character; if c then local h = c:FindFirstChild("Humanoid"); if h then h.WalkSpeed = State.WalkSpeed end end
+    end)
+end
+function StopSpeedHack()
+    if State.SpeedConn then State.SpeedConn:Disconnect(); State.SpeedConn = nil end
+    pcall(function() local c = LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = 16 end end)
+end
+
+function ApplyJumpPower()
+    local c = LocalPlayer.Character; if c then local h = c:FindFirstChild("Humanoid"); if h then h.JumpPower = State.JumpHeight end end
+end
+function ResetJumpPower()
+    local c = LocalPlayer.Character; if c then local h = c:FindFirstChild("Humanoid"); if h then h.JumpPower = 50 end end
+end
+
+function StartInfiniteJump()
+    StopInfiniteJump()
+    State.JumpConn = RunService.Heartbeat:Connect(function()
+        if not State.InfiniteJump then StopInfiniteJump(); return end
+        local c = LocalPlayer.Character; if c then local h = c:FindFirstChild("Humanoid"); if h and h:GetState() == Enum.HumanoidStateType.Freefall then h:ChangeState(Enum.HumanoidStateType.Jumping) end end
+    end)
+end
+function StopInfiniteJump() if State.JumpConn then State.JumpConn:Disconnect(); State.JumpConn = nil end end
+
+function StartAntiAFK()
+    StopAntiAFK()
+    State.AntiAFKConn = RunService.Heartbeat:Connect(function()
+        if not State.AntiAFK then StopAntiAFK(); return end
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
+        task.wait(0.1)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
+    end)
+end
+function StopAntiAFK() if State.AntiAFKConn then State.AntiAFKConn:Disconnect(); State.AntiAFKConn = nil end end
+
+function StartAimbot()
+    StopAimbot()
+    State.AimbotConn = RunService.Heartbeat:Connect(function()
+        if not State.Aimbot then StopAimbot(); return end
+        if not State.AimbotTarget or not State.AimbotTarget.Character or not State.AimbotTarget.Character:FindFirstChild("Head") then return end
+        local targetHead = State.AimbotTarget.Character.Head
+        local camPos = Camera.CFrame.Position
+        local targetPos = targetHead.Position
+        local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
+        if not onScreen then return end
+        local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        if (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude > State.AimbotFOV then return end
+        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(camPos, targetPos), State.AimbotSmoothness / 100)
+    end)
+end
+function StopAimbot() if State.AimbotConn then State.AimbotConn:Disconnect(); State.AimbotConn = nil end end
+
+function StartClickTP()
+    StopClickTP()
+    State.ClickTPConn = Mouse.Button1Down:Connect(function()
+        if not State.ClickTP then return end
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0, 3, 0))
+        end
+    end)
+end
+function StopClickTP() if State.ClickTPConn then State.ClickTPConn:Disconnect(); State.ClickTPConn = nil end end
+
+function UpdateESP()
+    for _, v in ipairs(State.ESPFolder:GetChildren()) do v:Destroy() end
+    if not State.ESP then return end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local h = Instance.new("Highlight")
+            h.Name = p.Name; h.Adornee = p.Character
+            h.FillColor = ESPColors[State.ESPColor][1]; h.FillTransparency = 0.4
+            h.OutlineColor = Color3.fromRGB(255, 255, 255); h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            h.Parent = State.ESPFolder
+        end
+    end
+end
+
+function SetInvis(s)
+    local c = LocalPlayer.Character; if not c then return end
+    for _, d in ipairs(c:GetDescendants()) do
+        if d:IsA("BasePart") then d.Transparency = s and 1 or 0
+        elseif d:IsA("Decal") or d:IsA("Texture") then d.Transparency = s and 1 or 0 end
+    end
+end
+
+-- Mobile Fly
+function CreateMobileFly()
+    RemoveMobileFly()
+    local M = Instance.new("ScreenGui"); M.Name = "MobileV13"; M.Parent = CoreGui; M.ResetOnSpawn = false; M.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    State.Mobile = M; _G.MobileV13 = M
+    
+    local tz = Instance.new("Frame", M); tz.Size = UDim2.new(0, 300, 1, -80); tz.Position = UDim2.new(0, 0, 0, 40)
+    tz.BackgroundTransparency = 1; tz.Active = true; tz.ZIndex = 50000
+    
+    local jv = Instance.new("Frame", M); jv.Size = UDim2.new(0, 160, 0, 160); jv.Position = UDim2.new(0, 25, 0.82, -180)
+    jv.BackgroundColor3 = Color3.fromRGB(18, 18, 24); jv.BackgroundTransparency = 0.5
+    jv.Visible = false; jv.ZIndex = 50001
+    Instance.new("UICorner", jv).CornerRadius = UDim.new(1, 0)
+    local jvs = Instance.new("UIStroke", jv); jvs.Color = RF.Accent; jvs.Thickness = 2
+    
+    local jt = Instance.new("Frame", jv); jt.Size = UDim2.new(0, 60, 0, 60); jt.Position = UDim2.new(0.5, -30, 0.5, -30)
+    jt.BackgroundColor3 = RF.Accent; jt.BackgroundTransparency = 0.4; jt.ZIndex = 50002
+    Instance.new("UICorner", jt).CornerRadius = UDim.new(1, 0)
+    
+    local drag, center = false, nil
+    tz.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then drag = true; center = i.Position; jv.Visible = true; jv.Position = UDim2.new(0, center.X - 80, 0, center.Y - 80) end end)
+    UserInputService.InputChanged:Connect(function(i)
+        if not drag or i.UserInputType ~= Enum.UserInputType.Touch then return end
+        local d = i.Position - center; local m = 50; if d.Magnitude > m then d = d.Unit * m end
+        jt.Position = UDim2.new(0, d.X + 80 - 30, 0, d.Y + 80 - 30)
+        State.JoyDir = Vector3.new(d.X/m, 0, -d.Y/m)
+    end)
+    UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then drag = false; jv.Visible = false; jt.Position = UDim2.new(0.5, -30, 0.5, -30); State.JoyDir = Vector3.zero end end)
+    
+    for _, data in ipairs({{"▲", 1, -370}, {"▼", -1, -220}}) do
+        local btn = Instance.new("TextButton", M); btn.Size = UDim2.new(0, 70, 0, 70); btn.Position = UDim2.new(1, -90, 1, data[3])
+        btn.BackgroundColor3 = RF.Background; btn.BackgroundTransparency = 0.4
+        btn.Text = data[1]; btn.TextColor3 = RF.Accent; btn.TextSize = 30; btn.Font = Enum.Font.GothamBold; btn.AutoButtonColor = false; btn.ZIndex = 50000
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 14); Instance.new("UIStroke", btn).Color = RF.Accent; Instance.new("UIStroke", btn).Thickness = 1.5
+        btn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then State.VertIn = data[2] end end)
+        btn.InputEnded:Connect(function() State.VertIn = 0 end)
+    end
+end
+
+function RemoveMobileFly()
+    if State.Mobile then State.Mobile:Destroy(); State.Mobile = nil end
+    State.JoyDir = Vector3.zero; State.VertIn = 0
+end
+
+-- Respawn
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    if State.Fly then State.Fly = false; State.Fly = true; StartFly() end
+    if State.Noclip then State.Noclip = false; State.Noclip = true; StartNoclip() end
+    if State.God then State.God = false; State.God = true; StartGodMode() end
+    if State.SpeedHack then State.SpeedHack = false; State.SpeedHack = true; StartSpeedHack() end
+    if State.JumpPower then ApplyJumpPower() end
+    if State.InfiniteJump then State.InfiniteJump = false; State.InfiniteJump = true; StartInfiniteJump() end
+    if State.Invis then SetInvis(true) end
+    if State.ESP then UpdateESP() end
+    if State.Aimbot then State.Aimbot = false; State.Aimbot = true; StartAimbot() end
+end)
+
+-- Periodic
+task.spawn(function() while task.wait(1.5) do if State.ESP then UpdateESP() end end end)
+task.spawn(function() while task.wait(1) do if State.Fly then local c = LocalPlayer.Character; if c and c:FindFirstChild("HumanoidRootPart") and (not State.FlyGyro or not State.FlyGyro.Parent) then StartFly() end end end end)
+
+UpdateESP()
