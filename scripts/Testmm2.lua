@@ -1,25 +1,30 @@
-local Player = gsme:Getservice("Players").LocalPlayer
+local Player = game:GetService("Players").LocalPlayer
 
 local Character = Player.Character or Player.CharacterAdded:Wait()
-local R = Character:WaitForChild("HumanoidRootPart")
+local HRP = Character:WaitForChild("HumanoidRootPart")
 
 local autofarm = true
 
 local function findCoin()
-  if not autofarm then
-    return
-  end
-  local coin = workspace.Factory.CoinContainer
+	if not autofarm then
+		return nil
+	end
 
-  for _, v in ipirs(coin:GetChildren()) do
-    if v isA("Part") and v.Name == "Coin_Server" then
-      return v
-    end
-  end
+	local coinFolder = workspace.Factory.CoinContainer
+
+	for _, v in ipairs(coinFolder:GetChildren()) do
+		if v:IsA("Part") and v.Name == "Coin_Server" then
+			return v
+		end
+	end
+
+	return nil
 end
-whlie task.wait(0.1) do
-  local co = findCoin
-if co then 
-    R.CFrame = co.CFrame
-  end
+
+while task.wait(0.1) do
+	local co = findCoin()
+
+	if co then
+		HRP.CFrame = co.CFrame
+	end
 end
