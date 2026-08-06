@@ -528,6 +528,17 @@ PlayerTab:Button({
     end,
 })
 
+
+
+
+local UnityTab = Window:Tab({
+    Title = "Unity",
+    Icon = "hand-fist",
+})
+
+
+
+
 UnityTab:Toggle({
     Title = "Bypass Fly",
     Desc = "บินแบบบายพาส",
