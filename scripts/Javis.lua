@@ -561,3 +561,185 @@ UnityTab:Slider({
         API_Bypass["_CR.DayToDay2044_Speed"] = tonumber(v) or 100
     end
 })
+
+
+-- ============================================
+-- [วางต่อท้ายไฟล์เดิม หลัง Window ถูกสร้างแล้ว]
+-- HTTP Spy Tab สำหรับ WindUI
+-- ============================================
+
+local HttpSpyTab = Window:Tab({
+    Title = "HTTP Spy",
+    Icon = "activity",
+})
+
+-- ตัวแปรเก็บ state
+local spyEnabled = true
+local maxLogEntries = 50
+local logEntries = {}
+local spyCodeText = "-- HTTP Spy Logs --\n🟢 กำลังดัก requests..."
+
+-- UI: Code Box แสดง logs
+local SpyCodeBox = HttpSpyTab:Code({
+    Title = "HTTP Requests Log",
+    Code = spyCodeText,
+    CanCopied = true,
+})
+
+-- ฟังก์ชันอัปเดต UI
+local function refreshSpyLogs()
+    local lines = {
+        "-- HTTP Spy Logs --",
+        "สถานะ: " .. (spyEnabled and "🟢 กำลังดัก" or "🔴 ปิดอยู่"),
+        "จำนวน: " .. #logEntries .. " entries",
+        string.rep("-", 40)
+    }
+    
+    if #logEntries == 0 then
+        table.insert(lines, "\nยังไม่มี HTTP request...")
+    else
+        for i, entry in ipairs(logEntries) do
+            table.insert(lines, string.format(
+                "\n[%s] [%s] %s %s",
+                entry.time, entry.source, entry.method, entry.url
+            ))
+            
+            if entry.headers then
+                local h = {}
+                for k, v in pairs(entry.headers) do
+                    table.insert(h, tostring(k) .. ": " .. tostring(v):sub(1, 50))
+                end
+                if #h > 0 then
+                    table.insert(lines, "  Headers: " .. table.concat(h, " | "))
+                end
+            end
+            
+            if entry.body and entry.body ~= "" then
+                table.insert(lines, "  Body: " .. entry.body)
+            end
+        end
+    end
+    
+    spyCodeText = table.concat(lines, "\n")
+    SpyCodeBox:SetCode(spyCodeText)
+end
+
+-- Toggle เปิด/ปิดการดักจับ
+HttpSpyTab:Toggle({
+    Title = "เปิด HTTP Spy",
+    Desc = "ดักจับ request ทั้งหมดแบบ Real-time",
+    Default = true,
+    Callback = function(value)
+        spyEnabled = value
+        refreshSpyLogs()
+    end,
+})
+
+-- ปุ่มล้าง Logs
+HttpSpyTab:Button({
+    Title = "🗑️ ล้าง Logs",
+    Callback = function()
+        logEntries = {}
+        refreshSpyLogs()
+        WindUI:Notify({
+            Title = "HTTP Spy",
+            Content = "ล้าง logs เรียบร้อย",
+            Icon = "trash-2",
+            Duration = 2,
+        })
+    end,
+})
+
+-- ปุ่มคัดลอก Logs ทั้งหมด
+HttpSpyTab:Button({
+    Title = "📋 คัดลอก Logs ทั้งหมด",
+    Callback = function()
+        if #logEntries == 0 then
+            WindUI:Notify({
+                Title = "ไม่มีข้อมูล",
+                Content = "ยังไม่มี logs ให้คัดลอก",
+                Icon = "clipboard-x",
+                Duration = 2,
+            })
+            return
+        end
+        pcall(function()
+            setclipboard(spyCodeText)
+        end)
+        WindUI:Notify({
+            Title = "คัดลอกสำเร็จ",
+            Content = "Logs ทั้งหมดถูกคัดลอกแล้ว",
+            Icon = "clipboard-check",
+            Duration = 2,
+        })
+    end,
+})
+
+-- ฟังก์ชันบันทึก log
+local function pushHttpLog(source, method, url, headers, body)
+    if not spyEnabled then return end
+    
+    local entry = {
+        time = os.date("%H:%M:%S"),
+        source = source,
+        method = method or "GET",
+        url = url or "unknown",
+        headers = (type(headers) == "table") and headers or nil,
+        body = type(body) == "string" and body:sub(1, 150) or nil,
+    }
+    
+    table.insert(logEntries, 1, entry)
+    
+    while #logEntries > maxLogEntries do
+        table.remove(logEntries)
+    end
+    
+    refreshSpyLogs()
+end
+
+-- ============================================
+-- Hook HTTP Functions
+-- ============================================
+
+-- game:HttpGet / game:HttpPost
+local oldHttpGet = hookfunction(game.HttpGet, function(self, url, ...)
+    pushHttpLog("game:HttpGet", "GET", url)
+    return oldHttpGet(self, url, ...)
+end)
+
+local oldHttpPost = hookfunction(game.HttpPost, function(self, url, data, ...)
+    pushHttpLog("game:HttpPost", "POST", url, nil, data)
+    return oldHttpPost(self, url, data, ...)
+end)
+
+-- Executor request functions (request, syn.request, etc.)
+local function hookExecutorRequest(name, func)
+    if not func then return end
+    getgenv()[name] = hookfunction(func, function(data)
+        local method = data.Method or data.method or "GET"
+        local url = data.Url or data.url
+        local headers = data.Headers or data.headers
+        local body = data.Body or data.body or data.Data or data.data
+        pushHttpLog(name, method, url, headers, body)
+        return func(data)
+    end)
+end
+
+hookExecutorRequest("request", request)
+hookExecutorRequest("http_request", http_request)
+hookExecutorRequest("syn_request", syn and syn.request)
+
+-- HttpService:RequestAsync
+local oldRequestAsync = hookfunction(HttpService.RequestAsync, function(self, options)
+    pushHttpLog("HttpService", options.Method or "GET", options.Url, options.Headers, options.Body)
+    return oldRequestAsync(self, options)
+end)
+
+-- แจ้งเตือนเริ่มต้น
+WindUI:Notify({
+    Title = "HTTP Spy",
+    Content = "เริ่มดักจับ HTTP requests แล้ว (เก็บสูงสุด " .. maxLogEntries .. " entries)",
+    Icon = "activity",
+    Duration = 3,
+})
+
