@@ -210,25 +210,21 @@ task.spawn(function()
     end
 
     local Gradient = Instance.new("UIGradient")
-    Gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),    -- แดง
-        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(180, 0, 180)),  -- ม่วง
-        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 85, 255)),   -- น้ำเงิน
-        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(180, 0, 180)),  -- ม่วง
-        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))     -- แดง
-    })
+Gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),     -- แดง
+    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 255, 255)), -- ขาว
+    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))      -- แดง
+})
     Gradient.Parent = Title
 
     local RunService = game:GetService("RunService")
     local offset = -1
 
     RunService.RenderStepped:Connect(function(dt)
-        offset += dt * 1 -- ปรับความเร็วตรงนี้
-
+        offset += dt * 1 
         if offset >= 1 then
             offset = -1
         end
-
         Gradient.Offset = Vector2.new(offset, 0)
     end)
 end)
