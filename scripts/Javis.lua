@@ -8,7 +8,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local API_URL = "http://51.75.118.171:20210/apisnyxai"
-local API_KEY = "snyx_703b5f7be5d93184800171577b42dbe7b11e35fdeb5da030"
+local API_KEY = "snyx_8dacfd7a2d55c61b1edad69de5e602531ef94bf845e53337"
 
 -- ===== ข้อมูลสำหรับ AI (กระชับ) =====
 local function BuildRealTimeContext()
