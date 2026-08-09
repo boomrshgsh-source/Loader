@@ -188,7 +188,7 @@ local Window = WindUI:CreateWindow({
     Icon = "bot",
     Author = "By 009.exe ",
     Folder = "JarvisAIMap",
-    Size = UDim2.fromOffset(600, 700),
+    Size = UDim2.fromOffset(850, 503),
     Theme = "Rose",
     Transparent = true,
 })
